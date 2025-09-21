@@ -5,31 +5,35 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Slowed + Reverb Song Editor</title>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--muted:#94a3b8;--accent:#7c3aed}
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{background:linear-gradient(180deg,#071025 0%, #071630 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:28px}
-    .wrap{width:980px;max-width:98%;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:20px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-    h1{margin:0 0 12px;font-size:20px}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
-    .panel{background:rgba(255,255,255,0.02);padding:14px;border-radius:10px}
-    .controls{display:grid;gap:10px}
-    label{font-size:13px;color:var(--muted)}
+    :root{
+      --bg:#0d0f1a;--card:#161b2a;--muted:#94a3b8;--accent:#7c3aed;--accent2:#06b6d4
+    }
+    html,body{height:100%;margin:0;font-family:'Inter',sans-serif}
+    body{background:linear-gradient(135deg,#0d0f1a,#1e2238);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:28px}
+    .wrap{width:1100px;max-width:98%;background:var(--card);border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.7);}
+    h1{text-align:center;font-size:26px;margin-bottom:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:20px}
+    .panel{background:rgba(255,255,255,0.03);padding:18px;border-radius:14px;backdrop-filter:blur(8px);}
+    .controls{display:grid;gap:14px}
+    label{font-size:14px;color:var(--muted)}
     input[type="range"]{width:100%}
     .row{display:flex;gap:8px;align-items:center}
-    button{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
-    .filebox{display:flex;gap:8px;align-items:center}
-    audio{width:100%;margin-top:8px}
+    button{background:var(--accent);border:none;color:white;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s}
+    button:hover{background:#6d28d9}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1)}
+    .filebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .small{font-size:13px;color:var(--muted)}
     .footer{margin-top:10px;font-size:13px;color:var(--muted)}
-    .preset{display:flex;gap:6px}
-    .preset button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:8px;color:var(--muted);cursor:pointer}
-    textarea{width:100%;height:90px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted);padding:8px;border-radius:8px}
+    .preset{display:flex;gap:6px;flex-wrap:wrap}
+    .preset button{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;color:var(--muted)}
+    textarea{width:100%;height:90px;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);padding:8px;border-radius:8px}
+    audio{width:100%;margin-top:8px;border-radius:12px;background:#000;box-shadow:0 4px 14px rgba(0,0,0,.6)}
+    .playerBox{padding:14px;background:linear-gradient(145deg,#111827,#1f2937);border-radius:14px;box-shadow:inset 0 0 10px rgba(0,0,0,.6)}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Slowed + Reverb Song Editor (Web)</h1>
+    <h1>🎶 Slowed + Reverb Song Editor 🎧</h1>
     <div class="grid">
       <div class="panel">
         <div class="filebox">
@@ -38,392 +42,180 @@
           <button id="clear" class="ghost">Clear</button>
         </div>
 
-        <div class="controls" style="margin-top:12px">
+        <div class="controls">
           <div>
-            <label>Slowed (playback rate) — <span id="rateLabel">0.80</span>x</label>
+            <label>Slowed (Playback Rate): <span id="rateLabel">0.80</span>x</label>
             <input id="rate" type="range" min="0.4" max="1.0" step="0.01" value="0.8">
-            <div class="small">Lower → slower & deeper</div>
           </div>
 
           <div>
-            <label>Reverb (wet mix) — <span id="reverbLabel">0.35</span></label>
+            <label>Reverb (Wet Mix): <span id="reverbLabel">0.35</span></label>
             <input id="reverb" type="range" min="0" max="1" step="0.01" value="0.35">
-            <div class="small">0 = dry, 1 = fully reverbed</div>
           </div>
 
           <div>
-            <label>Width / Damping (affects tail)</label>
-            <input id="damping" type="range" min="0" max="1" step="0.01" value="0.5">
+            <label>Bass Boost (Gain): <span id="bassLabel">1.0</span>x</label>
+            <input id="bass" type="range" min="0" max="3" step="0.1" value="1">
           </div>
 
           <div class="preset">
             <label>Presets:</label>
-            <button data-rate="0.65" data-rev="0.6">Deep Sleep</button>
-            <button data-rate="0.85" data-rev="0.25">Chill</button>
-            <button data-rate="0.5" data-rev="0.8">Ambient</button>
+            <button data-rate="0.65" data-rev="0.6" data-bass="1.5">Deep Sleep</button>
+            <button data-rate="0.85" data-rev="0.25" data-bass="1.2">Chill</button>
+            <button data-rate="0.5" data-rev="0.8" data-bass="2">Ambient</button>
           </div>
 
-          <div style="margin-top:6px">
-            <label>Impulse Response (optional - upload .wav/.mp3) </label>
-            <input id="irFile" type="file" accept="audio/*">
-            <div class="small">If you don't upload an IR, a synthetic hall will be generated automatically.</div>
+          <div class="row">
+            <button id="play">▶ Preview</button>
+            <button id="stop" class="ghost">⏹ Stop</button>
+            <button id="render">💾 Download Edited Song</button>
           </div>
 
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button id="play">Preview</button>
-            <button id="stop" class="ghost">Stop</button>
-            <button id="render">Render & Download WAV</button>
-            <button id="savePreset" class="ghost">Save Preset</button>
-          </div>
-
-          <div class="footer">Note: For reliable rendering & download, open this page via a local web server (e.g. <code>python -m http.server</code>). Works best in Chrome / Edge.</div>
+          <div class="footer">For best performance use Chrome/Edge on desktop. Download will be a WAV file.</div>
         </div>
 
         <div style="margin-top:12px">
-          <label>Log / Status</label>
+          <label>Status</label>
           <textarea id="log" readonly></textarea>
         </div>
       </div>
 
-      <div class="panel">
-        <div class="small">Preview Player</div>
+      <div class="panel playerBox">
+        <div class="small">🎵 Preview Player</div>
         <audio id="preview" controls></audio>
-
-        <div style="margin-top:12px">
-          <label>Saved Presets (local)</label>
-          <div id="presetList" class="small"></div>
-        </div>
-
-        <div style="margin-top:12px">
-          <label>How to use</label>
-          <ol class="small">
-            <li>Upload an audio file (MP3/WAV/AAC). Use "Load Demo" to test quickly.</li>
-            <li>Tweak Slowed (playback rate) and Reverb (wet) sliders.</li>
-            <li>Click Preview to hear effect. Click Render to export a processed WAV file.</li>
-            <li>If the browser prompts about autoplay, click Play on the preview manually.</li>
-          </ol>
-        </div>
       </div>
     </div>
   </div>
 
 <script>
-// Slowed + Reverb Web App — single-file implementation using Web Audio API
 let audioCtx = null;
-let sourceBuffer = null;
 let originalBuffer = null;
 let convolverBuffer = null;
-let convolverIRProvided = false;
 let playingNodes = [];
+let convolverIRProvided = false;
 
 const fileEl = document.getElementById('file');
-const irFileEl = document.getElementById('irFile');
 const preview = document.getElementById('preview');
 const rateEl = document.getElementById('rate');
 const reverbEl = document.getElementById('reverb');
-const dampingEl = document.getElementById('damping');
+const bassEl = document.getElementById('bass');
 const playBtn = document.getElementById('play');
 const stopBtn = document.getElementById('stop');
 const renderBtn = document.getElementById('render');
-const loadSample = document.getElementById('loadSample');
 const logEl = document.getElementById('log');
 const rateLabel = document.getElementById('rateLabel');
 const reverbLabel = document.getElementById('reverbLabel');
+const bassLabel = document.getElementById('bassLabel');
 
-function log(s){logEl.value += s + "\n"; logEl.scrollTop = logEl.scrollHeight}
-
-function ensureAudioCtx(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-}
+function log(s){logEl.value += s+"\n"; logEl.scrollTop = logEl.scrollHeight}
+function ensureAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
 
 fileEl.addEventListener('change', async (e)=>{
   const f = e.target.files[0];
   if(!f) return;
-  await loadFileToBuffer(f);
-});
-
-irFileEl.addEventListener('change', async(e)=>{
-  const f = e.target.files[0];
-  if(!f) return;
   ensureAudioCtx();
   const arr = await f.arrayBuffer();
-  convolverIRProvided = true;
-  convolverBuffer = await audioCtx.decodeAudioData(arr.slice(0));
-  log('Loaded custom IR: '+f.name);
-});
-
-async function loadFileToBuffer(file){
-  ensureAudioCtx();
-  const arr = await file.arrayBuffer();
   originalBuffer = await audioCtx.decodeAudioData(arr.slice(0));
   preview.src = URL.createObjectURL(new Blob([arr]));
-  log('Loaded audio: ' + file.name + ' ('+Math.round(originalBuffer.duration)+'s)');
-}
-
-loadSample.addEventListener('click', async ()=>{
-  // small built-in sample (tiny sine melody) to demo — generated procedurally
-  ensureAudioCtx();
-  const sr = 44100;
-  const dur = 6;
-  const buf = audioCtx.createBuffer(2, sr*dur, sr);
-  for(let ch=0; ch<2; ch++){
-    const data = buf.getChannelData(ch);
-    for(let i=0;i<data.length;i++){
-      const t = i/sr;
-      data[i] = 0.12*Math.sin(2*Math.PI*220*t) + 0.06*Math.sin(2*Math.PI*440*t*(1+0.1*Math.sin(2*Math.PI*0.3*t)));
-    }
-  }
-  originalBuffer = buf;
-  // create a simple wav blob for preview
-  const wav = bufferToWavBlob(buf);
-  preview.src = URL.createObjectURL(wav);
-  log('Loaded demo audio (procedural)');
+  log('Loaded: '+f.name);
 });
 
-rateEl.addEventListener('input', ()=>{rateLabel.textContent = parseFloat(rateEl.value).toFixed(2);});
-reverbEl.addEventListener('input', ()=>{reverbLabel.textContent = parseFloat(reverbEl.value).toFixed(2);});
+rateEl.addEventListener('input',()=>rateLabel.textContent=parseFloat(rateEl.value).toFixed(2));
+reverbEl.addEventListener('input',()=>reverbLabel.textContent=parseFloat(reverbEl.value).toFixed(2));
+bassEl.addEventListener('input',()=>bassLabel.textContent=parseFloat(bassEl.value).toFixed(1));
 
 document.querySelectorAll('.preset button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    rateEl.value = b.dataset.rate;
-    reverbEl.value = b.dataset.rev;
-    rateLabel.textContent = parseFloat(rateEl.value).toFixed(2);
-    reverbLabel.textContent = parseFloat(reverbEl.value).toFixed(2);
+  b.addEventListener('click',()=>{
+    rateEl.value=b.dataset.rate;reverbEl.value=b.dataset.rev;bassEl.value=b.dataset.bass;
+    rateLabel.textContent=parseFloat(rateEl.value).toFixed(2);
+    reverbLabel.textContent=parseFloat(reverbEl.value).toFixed(2);
+    bassLabel.textContent=parseFloat(bassEl.value).toFixed(1);
   });
 });
 
-stopBtn.addEventListener('click', stopAll);
-
-playBtn.addEventListener('click', async ()=>{
-  if(!originalBuffer){log('No audio loaded'); return}
+playBtn.addEventListener('click',async()=>{
+  if(!originalBuffer){log('No audio loaded');return}
   await playPreview();
 });
+stopBtn.addEventListener('click',stopAll);
 
 async function createConvolver(){
   ensureAudioCtx();
-  if(convolverIRProvided && convolverBuffer) return convolverBuffer;
-  // Generate synthetic hall IR based on damping and width
-  const length = audioCtx.sampleRate * 3.5; // 3.5s tail
-  const ir = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
-  const decay = 3.0 + (1 - parseFloat(dampingEl.value)) * 4.0; // larger decay
-  for(let ch=0; ch<2; ch++){
-    const data = ir.getChannelData(ch);
-    for(let i=0;i<length;i++){
-      // exponential decay * noise
-      const t = i/ audioCtx.sampleRate;
-      data[i] = (Math.random()*2-1) * Math.pow(1 - t/decay, 4) * Math.exp(-t/decay);
-    }
+  const length = audioCtx.sampleRate*3.5;
+  const ir = audioCtx.createBuffer(2,length,audioCtx.sampleRate);
+  for(let ch=0;ch<2;ch++){
+    const data=ir.getChannelData(ch);
+    for(let i=0;i<length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/length);
   }
-  convolverBuffer = ir;
+  convolverBuffer=ir;
   return ir;
 }
 
 async function playPreview(){
-  ensureAudioCtx();
   stopAll();
+  const playbackRate=parseFloat(rateEl.value);
+  const wet=parseFloat(reverbEl.value);
+  const bassGain=parseFloat(bassEl.value);
+  const src=audioCtx.createBufferSource();
+  src.buffer=originalBuffer;
+  src.playbackRate.value=playbackRate;
 
-  const playbackRate = parseFloat(rateEl.value);
-  const wet = parseFloat(reverbEl.value);
-  const convolverIR = await createConvolver();
+  const dryGain=audioCtx.createGain();dryGain.gain.value=1-wet;
+  const conv=audioCtx.createConvolver();conv.buffer=convolverBuffer||await createConvolver();
+  const wetGain=audioCtx.createGain();wetGain.gain.value=wet;
+  const bass=audioCtx.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=200;bass.gain.value=15*(bassGain-1);
 
-  const offlineCtx = audioCtx; // we'll play in real-time with AudioContext
-
-  // create source from originalBuffer
-  const src = offlineCtx.createBufferSource();
-  src.buffer = originalBuffer;
-  src.playbackRate.value = playbackRate;
-
-  // dry gain
-  const dryGain = offlineCtx.createGain();
-  dryGain.gain.value = 1 - wet;
-
-  // wet chain: convolver then wet gain
-  const conv = offlineCtx.createConvolver();
-  conv.buffer = convolverIR;
-  const wetGain = offlineCtx.createGain();
-  wetGain.gain.value = wet;
-
-  // connect
-  src.connect(dryGain).connect(offlineCtx.destination);
-  src.connect(conv).connect(wetGain).connect(offlineCtx.destination);
+  src.connect(bass);
+  bass.connect(dryGain).connect(audioCtx.destination);
+  bass.connect(conv).connect(wetGain).connect(audioCtx.destination);
 
   src.start();
-  playingNodes.push(src, dryGain, conv, wetGain);
-  log('Playing preview — rate:'+playbackRate.toFixed(2)+' wet:'+wet.toFixed(2));
+  playingNodes.push(src);
+  log('Previewing with rate '+playbackRate+', reverb '+wet+', bass '+bassGain);
 }
 
-function stopAll(){
-  if(!audioCtx) return;
-  try{
-    // stop all BufferSourceNodes in playingNodes
-    playingNodes.forEach(n=>{ if(n && n.stop) try{ n.stop(0);}catch(e){} });
-  }catch(e){}
-  playingNodes = [];
-  log('Stopped');
-}
+function stopAll(){playingNodes.forEach(n=>{try{n.stop()}catch(e){}});playingNodes=[];}
 
-// Render processed audio to a WAV and prompt download
-renderBtn.addEventListener('click', async ()=>{
+renderBtn.addEventListener('click',async()=>{
   if(!originalBuffer){log('No audio loaded');return}
-  renderBtn.disabled = true;
-  log('Rendering...');
-  try{
-    const rendered = await renderProcessedBuffer(originalBuffer, parseFloat(rateEl.value), parseFloat(reverbEl.value));
-    const wav = bufferToWavBlob(rendered);
-    const url = URL.createObjectURL(wav);
-    downloadURL(url, 'slowed_reverb.wav');
-    log('Rendered & download started');
-  }catch(err){
-    console.error(err); log('Render failed: '+err.message);
-  }
-  renderBtn.disabled = false;
-});
+  renderBtn.disabled=true;log('Rendering...');
+  const rate=parseFloat(rateEl.value),wet=parseFloat(reverbEl.value),bassGain=parseFloat(bassEl.value);
+  const sampleRate=44100;
+  const outLen=Math.ceil(originalBuffer.duration/rate*sampleRate);
+  const offline=new OfflineAudioContext(2,outLen,sampleRate);
 
-async function renderProcessedBuffer(inputBuffer, playbackRate, wet){
-  // We'll use OfflineAudioContext to render the slowed audio + reverb
-  const sampleRate = 44100;
-  const outLength = Math.ceil(inputBuffer.duration / playbackRate * sampleRate) + 1;
-  const offline = new OfflineAudioContext(2, outLength, sampleRate);
+  const src=offline.createBufferSource();src.buffer=originalBuffer;src.playbackRate.value=rate;
+  const dry=offline.createGain();dry.gain.value=1-wet;
+  const conv=offline.createConvolver();conv.buffer=await createConvolver();
+  const wetG=offline.createGain();wetG.gain.value=wet;
+  const bass=offline.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=200;bass.gain.value=15*(bassGain-1);
 
-  // source
-  const src = offline.createBufferSource();
-  // create a stretched buffer by resampling: easiest approach is to create a buffer and copy at slower rate
-  // Instead, we set playbackRate on the source and provide the original buffer — OfflineAudioContext will render slower/longer when playbackRate<1
-  src.buffer = inputBuffer;
-  src.playbackRate.value = playbackRate;
-
-  // dry
-  const dryGain = offline.createGain(); dryGain.gain.value = 1 - wet;
-
-  // reverb
-  const conv = offline.createConvolver();
-  let ir = null;
-  if(convolverIRProvided && convolverBuffer){
-    // resample IR to offline sampleRate if needed
-    ir = convolverBuffer;
-  } else {
-    // generate synthetic IR for offline context
-    const irLen = Math.floor(offline.sampleRate * 3.5);
-    ir = offline.createBuffer(2, irLen, offline.sampleRate);
-    const decay = 3.0 + (1 - parseFloat(dampingEl.value)) * 4.0;
-    for(let ch=0; ch<2; ch++){
-      const d = ir.getChannelData(ch);
-      for(let i=0;i<irLen;i++){
-        const t = i/offline.sampleRate;
-        d[i] = (Math.random()*2-1) * Math.pow(1 - t/decay, 4) * Math.exp(-t/decay);
-      }
-    }
-  }
-  conv.buffer = ir;
-  const wetGain = offline.createGain(); wetGain.gain.value = wet;
-
-  // connect and render
-  src.connect(dryGain).connect(offline.destination);
-  src.connect(conv).connect(wetGain).connect(offline.destination);
+  src.connect(bass);
+  bass.connect(dry).connect(offline.destination);
+  bass.connect(conv).connect(wetG).connect(offline.destination);
 
   src.start(0);
-  const rendered = await offline.startRendering();
-  return rendered;
-}
-
-// Helpers: convert AudioBuffer to WAV Blob
-function bufferToWavBlob(buffer){
-  const numOfChan = buffer.numberOfChannels;
-  const length = buffer.length * numOfChan * 2 + 44;
-  const bufferArr = new ArrayBuffer(length);
-  const view = new DataView(bufferArr);
-
-  /* RIFF identifier */ writeString(view, 0, 'RIFF');
-  /* file length */ view.setUint32(4, 36 + buffer.length * numOfChan * 2, true);
-  /* RIFF type */ writeString(view, 8, 'WAVE');
-  /* format chunk identifier */ writeString(view, 12, 'fmt ');
-  /* format chunk length */ view.setUint32(16, 16, true);
-  /* sample format (raw) */ view.setUint16(20, 1, true);
-  /* channel count */ view.setUint16(22, numOfChan, true);
-  /* sample rate */ view.setUint32(24, buffer.sampleRate, true);
-  /* byte rate (sampleRate * blockAlign) */ view.setUint32(28, buffer.sampleRate * numOfChan * 2, true);
-  /* block align (channel count * bytes per sample) */ view.setUint16(32, numOfChan * 2, true);
-  /* bits per sample */ view.setUint16(34, 16, true);
-  /* data chunk identifier */ writeString(view, 36, 'data');
-  /* data chunk length */ view.setUint32(40, buffer.length * numOfChan * 2, true);
-
-  // write interleaved
-  let offset = 44;
-  const channels = [];
-  for(let i=0;i<numOfChan;i++) channels.push(buffer.getChannelData(i));
-  for(let i=0;i<buffer.length;i++){
-    for(let ch=0; ch<numOfChan; ch++){
-      let sample = Math.max(-1, Math.min(1, channels[ch][i]));
-      sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-      view.setInt16(offset, sample, true);
-      offset += 2;
-    }
-  }
-
-  return new Blob([view], {type: 'audio/wav'});
-}
-
-function writeString(view, offset, string){
-  for(let i=0;i<string.length;i++){
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
-}
-
-function downloadURL(url, filename){
-  const a = document.createElement('a');
-  a.style.display='none';
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 15000);
-}
-
-// small utility: create WAV blob from AudioBuffer for preview demo
-function bufferToWavBlobPreview(ab){ return bufferToWavBlob(ab); }
-
-// saving/loading presets in localStorage
-const presetList = document.getElementById('presetList');
-function refreshPresets(){
-  const raw = localStorage.getItem('srev_presets');
-  let arr = raw ? JSON.parse(raw) : [];
-  if(arr.length===0) presetList.innerHTML = '<div class="small">No presets saved</div>';
-  else{
-    presetList.innerHTML = '';
-    arr.forEach((p, i)=>{
-      const d = document.createElement('div');
-      d.className='small';
-      d.innerHTML = `<span style="margin-right:8px">${p.name}</span><button data-i='${i}' class='ghost'>Load</button> <button data-i='${i}' class='ghost del'>Delete</button>`;
-      presetList.appendChild(d);
-    });
-    // attach handlers
-    presetList.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click', (e)=>{
-        const idx = parseInt(b.dataset.i);
-        if(b.classList.contains('del')){ arr.splice(idx,1); localStorage.setItem('srev_presets', JSON.stringify(arr)); refreshPresets(); }
-        else{ rateEl.value = arr[idx].rate; reverbEl.value = arr[idx].rev; rateLabel.textContent = parseFloat(rateEl.value).toFixed(2); reverbLabel.textContent = parseFloat(reverbEl.value).toFixed(2); }
-      });
-    });
-  }
-}
-
-document.getElementById('savePreset').addEventListener('click', ()=>{
-  const name = prompt('Preset name (short):','My Preset');
-  if(!name) return;
-  const raw = localStorage.getItem('srev_presets');
-  const arr = raw ? JSON.parse(raw) : [];
-  arr.push({name, rate: rateEl.value, rev: reverbEl.value});
-  localStorage.setItem('srev_presets', JSON.stringify(arr));
-  refreshPresets();
+  const rendered=await offline.startRendering();
+  const wav=bufferToWavBlob(rendered);
+  const url=URL.createObjectURL(wav);
+  downloadURL(url,'edited_song.wav');
+  log('Rendered and download started');
+  renderBtn.disabled=false;
 });
 
-// clear
-document.getElementById('clear').addEventListener('click', ()=>{ originalBuffer=null; preview.src=''; fileEl.value=''; irFileEl.value=''; convolverIRProvided=false; convolverBuffer=null; log('Cleared'); });
-
-refreshPresets();
-
+function bufferToWavBlob(buffer){
+  const n=buffer.numberOfChannels,l=buffer.length* n*2+44;
+  const arr=new ArrayBuffer(l);const view=new DataView(arr);
+  writeStr(view,0,'RIFF');view.setUint32(4,36+buffer.length*n*2,true);writeStr(view,8,'WAVE');
+  writeStr(view,12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,n,true);
+  view.setUint32(24,buffer.sampleRate,true);view.setUint32(28,buffer.sampleRate*n*2,true);view.setUint16(32,n*2,true);view.setUint16(34,16,true);
+  writeStr(view,36,'data');view.setUint32(40,buffer.length*n*2,true);
+  let offset=44;const ch=[];for(let i=0;i<n;i++)ch.push(buffer.getChannelData(i));
+  for(let i=0;i<buffer.length;i++)for(let j=0;j<n;j++){let s=Math.max(-1,Math.min(1,ch[j][i]));s=s<0?s*0x8000:s*0x7FFF;view.setInt16(offset,s,true);offset+=2}
+  return new Blob([view],{type:'audio/wav'});
+}
+function writeStr(view,o,s){for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));}
+function downloadURL(u,f){const a=document.createElement('a');a.href=u;a.download=f;a.click();setTimeout(()=>URL.revokeObjectURL(u),10000)}
 </script>
 </body>
 </html>

@@ -1,221 +1,544 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Slowed + Reverb Song Editor</title>
-  <style>
-    :root{
-      --bg:#0d0f1a;--card:#161b2a;--muted:#94a3b8;--accent:#7c3aed;--accent2:#06b6d4
-    }
-    html,body{height:100%;margin:0;font-family:'Inter',sans-serif}
-    body{background:linear-gradient(135deg,#0d0f1a,#1e2238);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:28px}
-    .wrap{width:1100px;max-width:98%;background:var(--card);border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.7);}
-    h1{text-align:center;font-size:26px;margin-bottom:20px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .grid{display:grid;grid-template-columns:1fr 380px;gap:20px}
-    .panel{background:rgba(255,255,255,0.03);padding:18px;border-radius:14px;backdrop-filter:blur(8px);}
-    .controls{display:grid;gap:14px}
-    label{font-size:14px;color:var(--muted)}
-    input[type="range"]{width:100%}
-    .row{display:flex;gap:8px;align-items:center}
-    button{background:var(--accent);border:none;color:white;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.2s}
-    button:hover{background:#6d28d9}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.1)}
-    .filebox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .small{font-size:13px;color:var(--muted)}
-    .footer{margin-top:10px;font-size:13px;color:var(--muted)}
-    .preset{display:flex;gap:6px;flex-wrap:wrap}
-    .preset button{background:transparent;border:1px solid rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;color:var(--muted)}
-    textarea{width:100%;height:90px;background:transparent;border:1px dashed rgba(255,255,255,0.1);color:var(--muted);padding:8px;border-radius:8px}
-    audio{width:100%;margin-top:8px;border-radius:12px;background:#000;box-shadow:0 4px 14px rgba(0,0,0,.6)}
-    .playerBox{padding:14px;background:linear-gradient(145deg,#111827,#1f2937);border-radius:14px;box-shadow:inset 0 0 10px rgba(0,0,0,.6)}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Slowed + Reverb — Pro Editor</title>
+
+<!-- WaveSurfer -->
+<script src="https://unpkg.com/wavesurfer.js/dist/wavesurfer.min.js"></script>
+
+<style>
+  /* ---------- Theme & Layout ---------- */
+  :root{
+    --bg-1: #0b0620;
+    --bg-2: #1b0830;
+    --panel: rgba(255,255,255,0.04);
+    --muted: #c9b8d9;
+    --accentA: #b794f4;
+    --accentB: #6ee7f9;
+    --accentC: #7c3aed;
+    --glass: rgba(255,255,255,0.03);
+    --glass-strong: rgba(255,255,255,0.05);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial;color:#fff;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));-webkit-font-smoothing:antialiased}
+  .container{max-width:1200px;margin:28px auto;padding:20px;border-radius:14px;display:grid;grid-template-columns:260px 1fr;gap:20px;background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.05));box-shadow:0 12px 40px rgba(2,6,23,0.7)}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));display:flex;flex-direction:column;gap:12px;min-height:520px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accentA),var(--accentB));display:flex;align-items:center;justify-content:center;font-weight:800;color:#160024}
+  .brand h1{font-size:18px;margin:0}
+  .brand p{margin:0;font-size:12px;color:var(--muted)}
+  nav{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+  nav a{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;color:var(--muted);text-decoration:none;transition:.14s}
+  nav a:hover{background:rgba(255,255,255,0.02);color:var(--accentA);transform:translateX(6px)}
+  .upgrade{margin-top:auto;padding:10px;border-radius:10px;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#160024;text-align:center;font-weight:700;cursor:pointer}
+
+  /* ---------- Main ---------- */
+  .main{display:flex;flex-direction:column;gap:16px;padding:6px}
+  .topRow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .filebox{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+  /* ---------- Choose file modern ---------- */
+  .chooseBtn{
+    display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--accentC),var(--accentB));color:#15021f;font-weight:700;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(124,58,237,0.14);
+  }
+  .chooseBtn:active{transform:scale(.99)}
+  .fileName{font-size:13px;color:var(--muted);max-width:430px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ---------- Waveform Card ---------- */
+  .card{background:var(--panel);padding:12px;border-radius:12px;backdrop-filter: blur(6px);box-shadow: inset 0 2px 14px rgba(255,255,255,0.02);}
+  #waveform{height:180px;border-radius:8px;overflow:hidden;box-shadow:0 6px 30px rgba(124,58,237,0.06) inset}
+
+  .waveControls{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px}
+  .time{font-size:13px;color:var(--muted)}
+
+  /* ---------- Controls ---------- */
+  .controlsGrid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  .leftControls{display:flex;flex-direction:column;gap:12px}
+  .label{font-size:13px;color:var(--muted);margin-bottom:8px}
+  /* neumorphic slider wrapper */
+  .sliderWrap{background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03));padding:10px;border-radius:12px}
+  input[type=range]{width:100%;accent-color: var(--accentC)}
+  .presets{display:flex;gap:8px;flex-wrap:wrap}
+  .preset{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);cursor:pointer}
+
+  /* right column */
+  .rightPanel{display:flex;flex-direction:column;gap:12px}
+  .btnRow{display:flex;gap:10px}
+  .btnPrimary{background: linear-gradient(90deg,var(--accentA),var(--accentB));color:#160024;padding:10px 14px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
+  .btnGhost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer}
+
+  /* progress */
+  .progressWrap{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px}
+  .progressBar{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+  .progressInner{height:100%;width:0%;background:linear-gradient(90deg,var(--accentC),var(--accentB));transition:width .2s}
+
+  /* player */
+  .player{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.03))}
+  .playBig{width:54px;height:54px;border-radius:50%;border:none;background:linear-gradient(90deg,var(--accentA),var(--accentB));color:#15021f;font-size:18px;cursor:pointer}
+  .mini{display:flex;flex-direction:column}
+  .miniTitle{font-weight:700}
+  .miniSub{font-size:12px;color:var(--muted)}
+
+  /* responsive */
+  @media (max-width:1024px){ .container{grid-template-columns:1fr; padding:16px} .controlsGrid{grid-template-columns:1fr} .sidebar{order:2} }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>🎶 Slowed + Reverb Song Editor 🎧</h1>
-    <div class="grid">
-      <div class="panel">
-        <div class="filebox">
-          <input id="file" type="file" accept="audio/*" />
-          <button id="loadSample" class="ghost">Load Demo</button>
-          <button id="clear" class="ghost">Clear</button>
-        </div>
 
-        <div class="controls">
-          <div>
-            <label>Slowed (Playback Rate): <span id="rateLabel">0.80</span>x</label>
-            <input id="rate" type="range" min="0.4" max="1.0" step="0.01" value="0.8">
-          </div>
-
-          <div>
-            <label>Reverb (Wet Mix): <span id="reverbLabel">0.35</span></label>
-            <input id="reverb" type="range" min="0" max="1" step="0.01" value="0.35">
-          </div>
-
-          <div>
-            <label>Bass Boost (Gain): <span id="bassLabel">1.0</span>x</label>
-            <input id="bass" type="range" min="0" max="3" step="0.1" value="1">
-          </div>
-
-          <div class="preset">
-            <label>Presets:</label>
-            <button data-rate="0.65" data-rev="0.6" data-bass="1.5">Deep Sleep</button>
-            <button data-rate="0.85" data-rev="0.25" data-bass="1.2">Chill</button>
-            <button data-rate="0.5" data-rev="0.8" data-bass="2">Ambient</button>
-          </div>
-
-          <div class="row">
-            <button id="play">▶ Preview</button>
-            <button id="stop" class="ghost">⏹ Stop</button>
-            <button id="render">💾 Download Edited Song</button>
-          </div>
-
-          <div class="footer">For best performance use Chrome/Edge on desktop. Download will be a WAV file.</div>
-        </div>
-
-        <div style="margin-top:12px">
-          <label>Status</label>
-          <textarea id="log" readonly></textarea>
-        </div>
-      </div>
-
-      <div class="panel playerBox">
-        <div class="small">🎵 Preview Player</div>
-        <audio id="preview" controls></audio>
+<div class="container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar card">
+    <div class="brand">
+      <div class="logo">SR</div>
+      <div>
+        <h1>Slowed+Reverb</h1>
+        <p>Web Song Editor</p>
       </div>
     </div>
-  </div>
+
+    <nav>
+      <a href="#">🎶 Remix</a>
+      <a href="#">⚙️ Settings</a>
+      <a href="#">🔌 Extension</a>
+      <a href="#">❓ FAQ</a>
+      <a href="#">⚡ Updates</a>
+      <a href="#">📰 Blog</a>
+    </nav>
+
+    <div class="upgrade">Upgrade to Pro</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topRow">
+      <div class="filebox">
+        <label for="fileInput" class="chooseBtn">📂 Choose File</label>
+        <input id="fileInput" type="file" accept="audio/*" style="display:none" />
+        <div class="fileName" id="fileName">No file selected</div>
+        <button id="loadDemo" class="btnGhost">Load Demo</button>
+        <button id="clearBtn" class="btnGhost">Clear</button>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="savePreset" class="btnGhost">Save Preset</button>
+        <button id="deployBtn" class="btnPrimary">Deploy</button>
+      </div>
+    </div>
+
+    <section class="card">
+      <div id="waveform"></div>
+      <div class="waveControls">
+        <div class="time" id="timeDisplay">00:00 / 00:00</div>
+        <div style="display:flex;gap:8px">
+          <button id="zoomIn" class="btnGhost">Zoom +</button>
+          <button id="zoomOut" class="btnGhost">Zoom -</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="controlsGrid">
+      <div class="leftControls">
+        <div class="sliderWrap card">
+          <div class="label">Speed <span id="rateLabel" style="float:right">0.80x</span></div>
+          <input id="rate" type="range" min="0.4" max="1.2" step="0.01" value="0.8">
+        </div>
+
+        <div class="sliderWrap card">
+          <div class="label">Reverb (Wet) <span id="reverbLabel" style="float:right">35%</span></div>
+          <input id="reverb" type="range" min="0" max="1" step="0.01" value="0.35">
+        </div>
+
+        <div class="sliderWrap card">
+          <div class="label">Bass Boost <span id="bassLabel" style="float:right">1.0x</span></div>
+          <input id="bass" type="range" min="0" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="card">
+          <div class="label">Presets</div>
+          <div class="presets">
+            <button class="preset" data-rate="0.65" data-rev="0.6" data-bass="1.6">Deep Sleep</button>
+            <button class="preset" data-rate="0.85" data-rev="0.25" data-bass="1.2">Chill</button>
+            <button class="preset" data-rate="0.5" data-rev="0.8" data-bass="2.0">Ambient</button>
+            <button class="preset" data-rate="1.1" data-rev="0.05" data-bass="1.1">Nightcore</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rightPanel">
+        <div class="card">
+          <div class="btnRow">
+            <button id="previewBtn" class="btnPrimary">▶ Preview</button>
+            <button id="stopBtn" class="btnGhost">⏹ Stop</button>
+            <button id="renderBtn" class="btnPrimary">💾 Download Edited WAV</button>
+          </div>
+
+          <div style="margin-top:12px" class="progressWrap">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:13px;color:var(--muted)">Render progress</div>
+              <div id="progressText" style="font-size:13px;color:var(--muted)">0%</div>
+            </div>
+            <div class="progressBar"><div class="progressInner" id="progressInner"></div></div>
+            <div id="log" style="margin-top:10px;font-size:13px;color:var(--muted);height:86px;overflow:auto"></div>
+          </div>
+        </div>
+
+        <div class="player card player">
+          <button id="playPause" class="playBig">▶</button>
+          <div class="mini">
+            <div class="miniTitle" id="miniTitle">No file</div>
+            <div class="miniSub">Preview player</div>
+          </div>
+          <div style="margin-left:auto" class="time" id="miniTime">00:00</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
 
 <script>
+/* -------------------------
+   Final upgraded app script
+   - WaveSurfer preview
+   - modern file picker
+   - offline render -> WAV download
+   - progress bar (simulated while rendering)
+   ------------------------- */
+
+let wavesurfer = null;
 let audioCtx = null;
 let originalBuffer = null;
-let convolverBuffer = null;
-let playingNodes = [];
-let convolverIRProvided = false;
+let currentFileName = 'edited_song.wav';
+let renderTimer = null;
 
-const fileEl = document.getElementById('file');
-const preview = document.getElementById('preview');
+const fileInput = document.getElementById('fileInput');
+const fileNameEl = document.getElementById('fileName');
+const loadDemoBtn = document.getElementById('loadDemo');
+const clearBtn = document.getElementById('clearBtn');
+
 const rateEl = document.getElementById('rate');
 const reverbEl = document.getElementById('reverb');
 const bassEl = document.getElementById('bass');
-const playBtn = document.getElementById('play');
-const stopBtn = document.getElementById('stop');
-const renderBtn = document.getElementById('render');
-const logEl = document.getElementById('log');
 const rateLabel = document.getElementById('rateLabel');
 const reverbLabel = document.getElementById('reverbLabel');
 const bassLabel = document.getElementById('bassLabel');
 
-function log(s){logEl.value += s+"\n"; logEl.scrollTop = logEl.scrollHeight}
-function ensureAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+const previewBtn = document.getElementById('previewBtn');
+const stopBtn = document.getElementById('stopBtn');
+const renderBtn = document.getElementById('renderBtn');
+const playPause = document.getElementById('playPause');
 
-fileEl.addEventListener('change', async (e)=>{
+const progressInner = document.getElementById('progressInner');
+const progressText = document.getElementById('progressText');
+const logEl = document.getElementById('log');
+const miniTitle = document.getElementById('miniTitle');
+const miniTime = document.getElementById('miniTime');
+
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  logEl.innerText += `[${t}] ${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function ensureAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function initWaveSurfer(){
+  if(wavesurfer) return;
+  wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    waveColor: '#7c3aed',
+    progressColor: '#fff',
+    cursorColor: '#fff',
+    barWidth: 2,
+    height: 180,
+    responsive: true,
+    normalize: true,
+  });
+
+  wavesurfer.on('ready', ()=>{
+    updateTimeDisplays();
+    miniTitle.innerText = currentFileName;
+    log(`Waveform ready — ${formatTime(wavesurfer.getDuration())}`);
+  });
+  wavesurfer.on('audioprocess', updateTimeDisplays);
+  wavesurfer.on('seek', updateTimeDisplays);
+  wavesurfer.on('finish', ()=>{ playPause.innerText = '▶'; updateTimeDisplays(); log('Preview finished') });
+}
+
+function formatTime(t){
+  if(!t || !isFinite(t)) return '00:00';
+  const mm = Math.floor(t/60), ss = Math.floor(t%60);
+  return String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+}
+function updateTimeDisplays(){
+  if(!wavesurfer) return;
+  const dur = wavesurfer.getDuration();
+  const pos = wavesurfer.getCurrentTime();
+  document.getElementById('timeDisplay').innerText = `${formatTime(pos)} / ${formatTime(dur)}`;
+  miniTime.innerText = formatTime(pos);
+}
+
+/* ---------- Choose file UI ---------- */
+document.querySelector('.chooseBtn').addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', async (e)=>{
   const f = e.target.files[0];
   if(!f) return;
+  fileNameEl.innerText = f.name;
+  currentFileName = f.name.replace(/\.[^/.]+$/, '') + '_slowed.wav';
   ensureAudioCtx();
+  initWaveSurfer();
   const arr = await f.arrayBuffer();
   originalBuffer = await audioCtx.decodeAudioData(arr.slice(0));
-  preview.src = URL.createObjectURL(new Blob([arr]));
-  log('Loaded: '+f.name);
+  const blob = new Blob([arr], {type: f.type});
+  wavesurfer.load(URL.createObjectURL(blob));
+  miniTitle.innerText = f.name;
+  log(`Loaded file: ${f.name}`);
 });
 
-rateEl.addEventListener('input',()=>rateLabel.textContent=parseFloat(rateEl.value).toFixed(2));
-reverbEl.addEventListener('input',()=>reverbLabel.textContent=parseFloat(reverbEl.value).toFixed(2));
-bassEl.addEventListener('input',()=>bassLabel.textContent=parseFloat(bassEl.value).toFixed(1));
+/* ---------- Load demo ---------- */
+loadDemoBtn.addEventListener('click', async ()=>{
+  ensureAudioCtx(); initWaveSurfer();
+  const sr = 44100, dur = 6;
+  const buf = audioCtx.createBuffer(2, sr*dur, sr);
+  for(let ch=0; ch<2; ch++){
+    const data = buf.getChannelData(ch);
+    for(let i=0;i<data.length;i++){
+      const t = i/sr;
+      data[i] = 0.12*Math.sin(2*Math.PI*220*t) + 0.06*Math.sin(2*Math.PI*440*t*(1+0.1*Math.sin(2*Math.PI*0.3*t)));
+      data[i] *= Math.exp(-t/6);
+    }
+  }
+  originalBuffer = buf;
+  const wav = audioBufferToWavBlob(buf);
+  wavesurfer.load(URL.createObjectURL(wav));
+  miniTitle.innerText = 'Demo audio';
+  fileNameEl.innerText = 'Demo audio';
+  currentFileName = 'demo_slowed.wav';
+  log('Loaded demo audio');
+});
 
-document.querySelectorAll('.preset button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    rateEl.value=b.dataset.rate;reverbEl.value=b.dataset.rev;bassEl.value=b.dataset.bass;
-    rateLabel.textContent=parseFloat(rateEl.value).toFixed(2);
-    reverbLabel.textContent=parseFloat(reverbEl.value).toFixed(2);
-    bassLabel.textContent=parseFloat(bassEl.value).toFixed(1);
+/* ---------- Clear ---------- */
+clearBtn.addEventListener('click', ()=>{
+  if(wavesurfer) wavesurfer.empty();
+  originalBuffer = null;
+  fileInput.value = '';
+  fileNameEl.innerText = 'No file selected';
+  miniTitle.innerText = 'No file';
+  log('Cleared');
+});
+
+/* ---------- sliders UI ---------- */
+rateEl.addEventListener('input', ()=> rateLabel.innerText = parseFloat(rateEl.value).toFixed(2) + 'x');
+reverbEl.addEventListener('input', ()=> reverbLabel.innerText = Math.round(parseFloat(reverbEl.value)*100) + '%');
+bassEl.addEventListener('input', ()=> bassLabel.innerText = parseFloat(bassEl.value).toFixed(1) + 'x');
+
+/* preset buttons */
+document.querySelectorAll('.preset').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    rateEl.value = b.dataset.rate;
+    reverbEl.value = b.dataset.rev;
+    bassEl.value = b.dataset.bass;
+    rateEl.dispatchEvent(new Event('input'));
+    reverbEl.dispatchEvent(new Event('input'));
+    bassEl.dispatchEvent(new Event('input'));
+    log(`Preset applied: ${b.innerText}`);
   });
 });
 
-playBtn.addEventListener('click',async()=>{
-  if(!originalBuffer){log('No audio loaded');return}
-  await playPreview();
+/* ---------- Wave controls / preview ---------- */
+document.getElementById('playPause').addEventListener('click', ()=>{
+  if(!wavesurfer){ log('No audio loaded'); return; }
+  if(wavesurfer.isPlaying()){ wavesurfer.pause(); playPause.innerText = '▶'; }
+  else { wavesurfer.play(); playPause.innerText = '❚❚'; }
 });
-stopBtn.addEventListener('click',stopAll);
 
-async function createConvolver(){
-  ensureAudioCtx();
-  const length = audioCtx.sampleRate*3.5;
-  const ir = audioCtx.createBuffer(2,length,audioCtx.sampleRate);
-  for(let ch=0;ch<2;ch++){
-    const data=ir.getChannelData(ch);
-    for(let i=0;i<length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/length);
+previewBtn.addEventListener('click', ()=>{
+  if(!originalBuffer){ log('No audio loaded'); return; }
+  initWaveSurfer();
+  wavesurfer.setPlaybackRate(parseFloat(rateEl.value));
+  wavesurfer.play();
+  playPause.innerText = '❚❚';
+  log(`Preview started — rate: ${rateEl.value}, reverb: ${reverbEl.value}, bass: ${bassEl.value}`);
+});
+
+stopBtn.addEventListener('click', ()=>{
+  if(wavesurfer) wavesurfer.stop();
+  playPause.innerText = '▶';
+  log('Stopped preview');
+});
+
+/* zoom */
+document.getElementById('zoomIn').addEventListener('click', ()=>{ if(wavesurfer) wavesurfer.zoom(80); });
+document.getElementById('zoomOut').addEventListener('click', ()=>{ if(wavesurfer) wavesurfer.zoom(0); });
+
+/* ---------- Render & Download (OfflineAudioContext) ---------- */
+renderBtn.addEventListener('click', async ()=>{
+  if(!originalBuffer){ alert('Please load an audio file first.'); return; }
+  log('Render started...');
+  setProgress(0);
+  try{
+    const rate = parseFloat(rateEl.value);
+    const wet = parseFloat(reverbEl.value);
+    const bassGain = parseFloat(bassEl.value);
+
+    // estimate output length and create offline context
+    const sampleRate = 44100;
+    const outLen = Math.ceil(originalBuffer.duration / rate * sampleRate) + 1;
+    const offlineCtx = new OfflineAudioContext(2, outLen, sampleRate);
+
+    // source
+    const src = offlineCtx.createBufferSource();
+    src.buffer = originalBuffer;
+    src.playbackRate.value = rate;
+
+    // bass filter
+    const bassFilter = offlineCtx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 200;
+    bassFilter.gain.value = 15 * (bassGain - 1);
+
+    // dry/wet
+    const dryGain = offlineCtx.createGain(); dryGain.gain.value = 1 - wet;
+    const wetGain = offlineCtx.createGain(); wetGain.gain.value = wet;
+
+    // convolver
+    const convolver = offlineCtx.createConvolver();
+    convolver.buffer = createSyntheticIR(offlineCtx, 3.5);
+
+    // connect graph
+    src.connect(bassFilter);
+    bassFilter.connect(dryGain).connect(offlineCtx.destination);
+    bassFilter.connect(convolver).connect(wetGain).connect(offlineCtx.destination);
+
+    src.start(0);
+
+    // show simulated progress while rendering (since API has no progress callback)
+    simulateProgressStart();
+
+    const rendered = await offlineCtx.startRendering();
+
+    simulateProgressFinish();
+
+    // convert to WAV and download
+    const wavBlob = audioBufferToWavBlob(rendered);
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentFileName || 'edited_song.wav';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 15000);
+
+    setProgress(100);
+    log('Render complete — download started');
+  }catch(err){
+    simulateProgressFinish();
+    log('Render failed: ' + (err && err.message ? err.message : err));
+    console.error(err);
+    alert('Render failed — check console for details.');
   }
-  convolverBuffer=ir;
-  return ir;
-}
-
-async function playPreview(){
-  stopAll();
-  const playbackRate=parseFloat(rateEl.value);
-  const wet=parseFloat(reverbEl.value);
-  const bassGain=parseFloat(bassEl.value);
-  const src=audioCtx.createBufferSource();
-  src.buffer=originalBuffer;
-  src.playbackRate.value=playbackRate;
-
-  const dryGain=audioCtx.createGain();dryGain.gain.value=1-wet;
-  const conv=audioCtx.createConvolver();conv.buffer=convolverBuffer||await createConvolver();
-  const wetGain=audioCtx.createGain();wetGain.gain.value=wet;
-  const bass=audioCtx.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=200;bass.gain.value=15*(bassGain-1);
-
-  src.connect(bass);
-  bass.connect(dryGain).connect(audioCtx.destination);
-  bass.connect(conv).connect(wetGain).connect(audioCtx.destination);
-
-  src.start();
-  playingNodes.push(src);
-  log('Previewing with rate '+playbackRate+', reverb '+wet+', bass '+bassGain);
-}
-
-function stopAll(){playingNodes.forEach(n=>{try{n.stop()}catch(e){}});playingNodes=[];}
-
-renderBtn.addEventListener('click',async()=>{
-  if(!originalBuffer){log('No audio loaded');return}
-  renderBtn.disabled=true;log('Rendering...');
-  const rate=parseFloat(rateEl.value),wet=parseFloat(reverbEl.value),bassGain=parseFloat(bassEl.value);
-  const sampleRate=44100;
-  const outLen=Math.ceil(originalBuffer.duration/rate*sampleRate);
-  const offline=new OfflineAudioContext(2,outLen,sampleRate);
-
-  const src=offline.createBufferSource();src.buffer=originalBuffer;src.playbackRate.value=rate;
-  const dry=offline.createGain();dry.gain.value=1-wet;
-  const conv=offline.createConvolver();conv.buffer=await createConvolver();
-  const wetG=offline.createGain();wetG.gain.value=wet;
-  const bass=offline.createBiquadFilter();bass.type='lowshelf';bass.frequency.value=200;bass.gain.value=15*(bassGain-1);
-
-  src.connect(bass);
-  bass.connect(dry).connect(offline.destination);
-  bass.connect(conv).connect(wetG).connect(offline.destination);
-
-  src.start(0);
-  const rendered=await offline.startRendering();
-  const wav=bufferToWavBlob(rendered);
-  const url=URL.createObjectURL(wav);
-  downloadURL(url,'edited_song.wav');
-  log('Rendered and download started');
-  renderBtn.disabled=false;
 });
 
-function bufferToWavBlob(buffer){
-  const n=buffer.numberOfChannels,l=buffer.length* n*2+44;
-  const arr=new ArrayBuffer(l);const view=new DataView(arr);
-  writeStr(view,0,'RIFF');view.setUint32(4,36+buffer.length*n*2,true);writeStr(view,8,'WAVE');
-  writeStr(view,12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,n,true);
-  view.setUint32(24,buffer.sampleRate,true);view.setUint32(28,buffer.sampleRate*n*2,true);view.setUint16(32,n*2,true);view.setUint16(34,16,true);
-  writeStr(view,36,'data');view.setUint32(40,buffer.length*n*2,true);
-  let offset=44;const ch=[];for(let i=0;i<n;i++)ch.push(buffer.getChannelData(i));
-  for(let i=0;i<buffer.length;i++)for(let j=0;j<n;j++){let s=Math.max(-1,Math.min(1,ch[j][i]));s=s<0?s*0x8000:s*0x7FFF;view.setInt16(offset,s,true);offset+=2}
-  return new Blob([view],{type:'audio/wav'});
+/* ---------- Synthetic IR ---------- */
+function createSyntheticIR(ctx, seconds){
+  const sr = ctx.sampleRate;
+  const len = Math.floor(sr * seconds);
+  const buffer = ctx.createBuffer(2, len, sr);
+  const decay = seconds * 1.5;
+  for(let ch=0; ch<2; ch++){
+    const data = buffer.getChannelData(ch);
+    for(let i=0;i<len;i++){
+      const t = i / sr;
+      data[i] = (Math.random()*2-1) * Math.pow(1 - t/seconds, 3) * Math.exp(-t/decay);
+    }
+  }
+  return buffer;
 }
-function writeStr(view,o,s){for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));}
-function downloadURL(u,f){const a=document.createElement('a');a.href=u;a.download=f;a.click();setTimeout(()=>URL.revokeObjectURL(u),10000)}
+
+/* ---------- Progress helpers (simulated) ---------- */
+let progressInterval = null;
+function simulateProgressStart(){
+  let p = 4;
+  setProgress(p);
+  progressInterval = setInterval(()=>{
+    p += Math.random()*6 + 2; // advance randomly
+    if(p > 96) p = 96;
+    setProgress(Math.floor(p));
+  }, 350);
+}
+function simulateProgressFinish(){
+  clearInterval(progressInterval);
+  setProgress(100);
+  setTimeout(()=>setProgress(0), 800);
+}
+function setProgress(percent){
+  progressInner.style.width = percent + '%';
+  progressText.innerText = percent + '%';
+}
+
+/* ---------- convert AudioBuffer -> 16-bit WAV Blob ---------- */
+function audioBufferToWavBlob(ab){
+  const numCh = ab.numberOfChannels;
+  const sampleRate = ab.sampleRate;
+  const sampleCount = ab.length;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + sampleCount * blockAlign);
+  const view = new DataView(buffer);
+
+  /* RIFF chunk descriptor */
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + sampleCount * blockAlign, true);
+  writeString(view, 8, 'WAVE');
+  /* fmt sub-chunk */
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+  view.setUint16(20, 1, true); // AudioFormat PCM = 1
+  view.setUint16(22, numCh, true); // NumChannels
+  view.setUint32(24, sampleRate, true); // SampleRate
+  view.setUint32(28, sampleRate * blockAlign, true); // ByteRate
+  view.setUint16(32, blockAlign, true); // BlockAlign
+  view.setUint16(34, 16, true); // BitsPerSample
+  /* data sub-chunk */
+  writeString(view, 36, 'data');
+  view.setUint32(40, sampleCount * blockAlign, true);
+
+  // write interleaved PCM samples
+  let offset = 44;
+  const channels = [];
+  for(let c=0;c<numCh;c++) channels.push(ab.getChannelData(c));
+
+  for(let i=0;i<sampleCount;i++){
+    for(let c=0;c<numCh;c++){
+      let sample = Math.max(-1, Math.min(1, channels[c][i]));
+      // scale to 16-bit signed int
+      const s = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, Math.round(s), true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+
+  function writeString(view, offset, string){
+    for(let i=0;i<string.length;i++) view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+/* ---------- utility: audioBuffer -> wav blob (for demo buffer) ---------- */
+function audioBufferToWavBlob_simple(ab){ return audioBufferToWavBlob(ab); }
+
+/* ---------- init on load ---------- */
+ensureAudioCtx();
+initWaveSurfer();
+log('App ready');
+
 </script>
 </body>
 </html>
